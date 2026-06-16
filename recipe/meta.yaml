@@ -33,9 +33,6 @@ outputs:
   - name: libz3
     script: build_lib.sh   # [unix]
     script: build_lib.bat  # [win]
-    build:
-      run_exports:
-        - {{ pin_subpackage("libz3", max_pin="x") }}
     requirements:
       build:
         - python
@@ -117,15 +114,15 @@ outputs:
       requires:
         - pip
         - pytest
-
+  # compatibility for previous name of library
   - name: z3prover
+    build:
     requirements:
       host:
-        - {{ pin_subpackage("libz3", exact=True) }}
+        - python
       run:
+        - python
         - {{ pin_subpackage("libz3", exact=True) }}
-      run_exports:
-        - {{ pin_subpackage("libz3", max_pin="x") }}
     test:
       commands:
         - z3 --help
