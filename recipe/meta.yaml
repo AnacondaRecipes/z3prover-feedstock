@@ -1,6 +1,5 @@
 {% set name = "z3prover" %}
 {% set version = "4.15.4" %}
-{% set lib = "" if unix else "Library/" %}
 {% set version_with_py_micro = "4.15.4.0" %}
 
 package:
@@ -51,36 +50,54 @@ outputs:
       commands:
         - z3 --help
         # libraries
-        - lib/libz3.so  # [linux]
-        - lib/libz3.so.${{ version }}*  # [linux]
-        - lib/libz3.dylib  # [osx]
-        - lib/libz3.${{ version }}*.dylib  # [osx]
-        - Library/bin/libz3.dll  # [win]
-        - Library/lib/libz3.lib  # [win]
+        - ls ${PREFIX}/lib/libz3.so*                                                 # [linux]
+        - ls ${PREFIX}/lib/libz3.dylib*                                              # [osx]
+        - if not exist %PREFIX%\Library\bin\libz3.dll exit 1                         # [win]
+        - if not exist %PREFIX%\Library\lib\libz3.lib exit 1                         # [win]
         # binaries
-        - bin/z3  # [unix]
-        - Library/bin/z3.exe  # [win]
+        - test -f ${PREFIX}/bin/z3                                                   # [unix]
+        - if not exist %PREFIX%\Library\bin\z3.exe exit 1                            # [win]
         # headers
-        - {{ lib }}include/z3_algebraic.h
-        - {{ lib }}include/z3_api.h
-        - {{ lib }}include/z3_ast_containers.h
-        - {{ lib }}include/z3_fixedpoint.h
-        - {{ lib }}include/z3_fpa.h
-        - {{ lib }}include/z3.h
-        - {{ lib }}include/z3++.h
-        - {{ lib }}include/z3_macros.h
-        - {{ lib }}include/z3_optimization.h
-        - {{ lib }}include/z3_polynomial.h
-        - {{ lib }}include/z3_rcf.h
-        - {{ lib }}include/z3_v1.h
-        - {{ lib }}include/z3_spacer.h
-        - {{ lib }}include/z3_version.h
-        # cmake & pkgconfig metadata
-        - {{ lib }}lib/cmake/z3/Z3Targets.cmake
-        - {{ lib }}lib/cmake/z3/Z3Targets-release.cmake
-        - {{ lib }}lib/cmake/z3/Z3Config.cmake
-        - {{ lib }}lib/cmake/z3/Z3ConfigVersion.cmake
-        - {{ lib }}lib/pkgconfig/z3.pc
+        - test -f ${PREFIX}/include/z3_algebraic.h                                   # [unix]
+        - test -f ${PREFIX}/include/z3_api.h                                         # [unix]
+        - test -f ${PREFIX}/include/z3_ast_containers.h                              # [unix]
+        - test -f ${PREFIX}/include/z3_fixedpoint.h                                  # [unix]
+        - test -f ${PREFIX}/include/z3_fpa.h                                         # [unix]
+        - test -f ${PREFIX}/include/z3.h                                             # [unix]
+        - test -f ${PREFIX}/include/z3++.h                                           # [unix]
+        - test -f ${PREFIX}/include/z3_macros.h                                      # [unix]
+        - test -f ${PREFIX}/include/z3_optimization.h                                # [unix]
+        - test -f ${PREFIX}/include/z3_polynomial.h                                  # [unix]
+        - test -f ${PREFIX}/include/z3_rcf.h                                         # [unix]
+        - test -f ${PREFIX}/include/z3_v1.h                                          # [unix]
+        - test -f ${PREFIX}/include/z3_spacer.h                                      # [unix]
+        - test -f ${PREFIX}/include/z3_version.h                                     # [unix]
+        - if not exist %PREFIX%\Library\include\z3_algebraic.h exit 1                # [win]
+        - if not exist %PREFIX%\Library\include\z3_api.h exit 1                      # [win]
+        - if not exist %PREFIX%\Library\include\z3_ast_containers.h exit 1           # [win]
+        - if not exist %PREFIX%\Library\include\z3_fixedpoint.h exit 1               # [win]
+        - if not exist %PREFIX%\Library\include\z3_fpa.h exit 1                      # [win]
+        - if not exist %PREFIX%\Library\include\z3.h exit 1                          # [win]
+        - if not exist %PREFIX%\Library\include\z3++.h exit 1                        # [win]
+        - if not exist %PREFIX%\Library\include\z3_macros.h exit 1                   # [win]
+        - if not exist %PREFIX%\Library\include\z3_optimization.h exit 1             # [win]
+        - if not exist %PREFIX%\Library\include\z3_polynomial.h exit 1               # [win]
+        - if not exist %PREFIX%\Library\include\z3_rcf.h exit 1                      # [win]
+        - if not exist %PREFIX%\Library\include\z3_v1.h exit 1                       # [win]
+        - if not exist %PREFIX%\Library\include\z3_spacer.h exit 1                   # [win]
+        - if not exist %PREFIX%\Library\include\z3_version.h exit 1                  # [win]
+        # cmake metadata
+        - test -f ${PREFIX}/lib/cmake/z3/Z3Targets.cmake                             # [unix]
+        - test -f ${PREFIX}/lib/cmake/z3/Z3Targets-release.cmake                     # [unix]
+        - test -f ${PREFIX}/lib/cmake/z3/Z3Config.cmake                              # [unix]
+        - test -f ${PREFIX}/lib/cmake/z3/Z3ConfigVersion.cmake                       # [unix]
+        - if not exist %PREFIX%\Library\lib\cmake\z3\Z3Targets.cmake exit 1          # [win]
+        - if not exist %PREFIX%\Library\lib\cmake\z3\Z3Targets-release.cmake exit 1  # [win]
+        - if not exist %PREFIX%\Library\lib\cmake\z3\Z3Config.cmake exit 1           # [win]
+        - if not exist %PREFIX%\Library\lib\cmake\z3\Z3ConfigVersion.cmake exit 1    # [win]
+        # pkgconfig metadata
+        - test -f ${PREFIX}/lib/pkgconfig/z3.pc                                      # [unix]
+        - if not exist %PREFIX%\Library\lib\pkgconfig\z3.pc exit 1                   # [win]
         
   - name: z3-solver
     script: build_py.sh   # [unix]
@@ -110,7 +127,7 @@ outputs:
         - z3
       commands:
         - pip check
-        - pytest -vv --tb=long --color=yes
+        - pytest -v test_z3.py
       requires:
         - pip
         - pytest
