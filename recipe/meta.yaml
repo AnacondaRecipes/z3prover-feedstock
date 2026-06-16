@@ -1,0 +1,158 @@
+{% set name = "z3prover" %}
+{% set version = "4.15.4" %}
+{% set version_with_py_micro = "4.15.4.0" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/Z3Prover/z3/archive/refs/tags/z3-{{ version }}.tar.gz
+  sha256: dae526252cb0585c8c863292ebec84cace4901a014b190a73f14087dd08d252b
+  patches:
+    # backport https://github.com/Z3Prover/z3/pull/8088
+    - patches/0001-BLD-Add-CMake-option-to-build-Python-bindings-withou.patch
+    - patches/0002-avoid-custom-re-build-commands-and-data-files.patch
+
+build:
+  number: 0
+
+requirements:
+  host:
+    - pip
+    - python
+    - cmake
+    - ninja-base
+    - {{ stdlib('c') }}
+    - {{ compiler('cxx') }}
+  run:
+    - python
+
+outputs:
+  - name: libz3
+    script: build_lib.sh   # [unix]
+    script: build_lib.bat  # [win]
+    requirements:
+      build:
+        - python
+        - {{ stdlib('c') }}
+        - {{ compiler('cxx') }}
+        - cmake
+        - ninja-base
+      host:
+        - python
+        - llvm-openmp  # [osx]
+        - libgomp  # [linux]
+        - vcomp14  # [win and x86_64]
+      run_constraints:
+        - z3prover =={{ version }}
+    test:
+      commands:
+        - z3 --help
+        # libraries
+        - ls ${PREFIX}/lib/libz3.so*                                                 # [linux]
+        - ls ${PREFIX}/lib/libz3.dylib*                                              # [osx]
+        - if not exist %PREFIX%\Library\bin\libz3.dll exit 1                         # [win]
+        - if not exist %PREFIX%\Library\lib\libz3.lib exit 1                         # [win]
+        # binaries
+        - test -f ${PREFIX}/bin/z3                                                   # [unix]
+        - if not exist %PREFIX%\Library\bin\z3.exe exit 1                            # [win]
+        # headers
+        - test -f ${PREFIX}/include/z3_algebraic.h                                   # [unix]
+        - test -f ${PREFIX}/include/z3_api.h                                         # [unix]
+        - test -f ${PREFIX}/include/z3_ast_containers.h                              # [unix]
+        - test -f ${PREFIX}/include/z3_fixedpoint.h                                  # [unix]
+        - test -f ${PREFIX}/include/z3_fpa.h                                         # [unix]
+        - test -f ${PREFIX}/include/z3.h                                             # [unix]
+        - test -f ${PREFIX}/include/z3++.h                                           # [unix]
+        - test -f ${PREFIX}/include/z3_macros.h                                      # [unix]
+        - test -f ${PREFIX}/include/z3_optimization.h                                # [unix]
+        - test -f ${PREFIX}/include/z3_polynomial.h                                  # [unix]
+        - test -f ${PREFIX}/include/z3_rcf.h                                         # [unix]
+        - test -f ${PREFIX}/include/z3_v1.h                                          # [unix]
+        - test -f ${PREFIX}/include/z3_spacer.h                                      # [unix]
+        - test -f ${PREFIX}/include/z3_version.h                                     # [unix]
+        - if not exist %PREFIX%\Library\include\z3_algebraic.h exit 1                # [win]
+        - if not exist %PREFIX%\Library\include\z3_api.h exit 1                      # [win]
+        - if not exist %PREFIX%\Library\include\z3_ast_containers.h exit 1           # [win]
+        - if not exist %PREFIX%\Library\include\z3_fixedpoint.h exit 1               # [win]
+        - if not exist %PREFIX%\Library\include\z3_fpa.h exit 1                      # [win]
+        - if not exist %PREFIX%\Library\include\z3.h exit 1                          # [win]
+        - if not exist %PREFIX%\Library\include\z3++.h exit 1                        # [win]
+        - if not exist %PREFIX%\Library\include\z3_macros.h exit 1                   # [win]
+        - if not exist %PREFIX%\Library\include\z3_optimization.h exit 1             # [win]
+        - if not exist %PREFIX%\Library\include\z3_polynomial.h exit 1               # [win]
+        - if not exist %PREFIX%\Library\include\z3_rcf.h exit 1                      # [win]
+        - if not exist %PREFIX%\Library\include\z3_v1.h exit 1                       # [win]
+        - if not exist %PREFIX%\Library\include\z3_spacer.h exit 1                   # [win]
+        - if not exist %PREFIX%\Library\include\z3_version.h exit 1                  # [win]
+        # cmake metadata
+        - test -f ${PREFIX}/lib/cmake/z3/Z3Targets.cmake                             # [unix]
+        - test -f ${PREFIX}/lib/cmake/z3/Z3Targets-release.cmake                     # [unix]
+        - test -f ${PREFIX}/lib/cmake/z3/Z3Config.cmake                              # [unix]
+        - test -f ${PREFIX}/lib/cmake/z3/Z3ConfigVersion.cmake                       # [unix]
+        - if not exist %PREFIX%\Library\lib\cmake\z3\Z3Targets.cmake exit 1          # [win]
+        - if not exist %PREFIX%\Library\lib\cmake\z3\Z3Targets-release.cmake exit 1  # [win]
+        - if not exist %PREFIX%\Library\lib\cmake\z3\Z3Config.cmake exit 1           # [win]
+        - if not exist %PREFIX%\Library\lib\cmake\z3\Z3ConfigVersion.cmake exit 1    # [win]
+        # pkgconfig metadata
+        - test -f ${PREFIX}/lib/pkgconfig/z3.pc                                      # [unix]
+        - if not exist %PREFIX%\Library\lib\pkgconfig\z3.pc exit 1                   # [win]
+        
+  - name: z3-solver
+    script: build_py.sh   # [unix]
+    script: build_py.bat  # [win]
+    requirements:
+      build:
+        - python
+        - {{ stdlib('c') }}
+        - {{ compiler('cxx') }}
+        - cmake
+        - ninja-base
+      host:
+        - pip
+        - python
+        - setuptools
+        - llvm-openmp  # [osx]
+        - libgomp  # [linux]
+        - vcomp14  # [win and x86_64]
+        - {{ pin_subpackage("libz3", exact=True) }}
+      run:
+        - python
+        - {{ pin_subpackage("libz3", exact=True) }}
+    test:
+      files:
+        - test_z3.py
+      imports:
+        - z3
+      commands:
+        - pip check
+        - pytest -v test_z3.py
+      requires:
+        - pip
+        - pytest
+  # compatibility for previous name of library
+  - name: z3prover
+    build:
+    requirements:
+      host:
+        - python
+      run:
+        - python
+        - {{ pin_subpackage("libz3", exact=True) }}
+    test:
+      commands:
+        - z3 --help
+
+about:
+  license: MIT
+  license_file: LICENSE.txt
+  summary: The Z3 Theorem Prover
+  homepage: https://github.com/Z3Prover/z3
+  repository: https://github.com/Z3Prover/z3
+  documentation: https://github.com/Z3Prover/z3/wiki#background
+
+extra:
+  recipe-maintainers:
+    - martin-g
+    - h-vetinari

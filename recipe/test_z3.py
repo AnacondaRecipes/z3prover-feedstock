@@ -2,9 +2,12 @@ import os
 import importlib.metadata
 import z3
 
-PY_VERSION = os.environ["PKG_VERSION"]
-LIB_VERSION = PY_VERSION.rsplit(".", 1)[0]
 PKG_NAME = os.environ["PKG_NAME"]
+PKG_VERSION = os.environ["PKG_VERSION"]  # "4.15.4"
+
+# PyPI wheels append ".0" — derive it; conda metadata may report either form
+PY_VERSION = f"{PKG_VERSION}.0"   # "4.15.4.0"
+LIB_VERSION = PKG_VERSION         # "4.15.4" — libz3 uses 3-component version
 
 
 def test_py_module_version():
@@ -17,7 +20,9 @@ def test_py_module_version():
     """
     module_version = importlib.metadata.version(PKG_NAME)
     print(f"{PKG_NAME} module version:", module_version)
-    assert module_version == PY_VERSION
+    # Normalize trailing ".0" — both "4.15.4" and "4.15.4.0" are acceptable
+    normalized = module_version if not module_version.endswith(".0") else module_version[:-2]
+    assert normalized == PKG_VERSION
 
 
 def test_libz3_version():
