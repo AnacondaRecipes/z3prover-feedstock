@@ -1,0 +1,11 @@
+anaconda_config_version: 1
+upstream_sources:
+  - github:
+      identifier: Z3Prover/z3
+      use_max_tag: true
+      prefix: z3-
+      include_regex: ^z3-\d+(?:\.\d+)+$
+    packages:
+      - libz3
+      - z3-solver
+      - z3prover
