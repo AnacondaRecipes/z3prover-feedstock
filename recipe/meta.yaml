@@ -15,7 +15,7 @@ source:
     - patches/0002-avoid-custom-re-build-commands-and-data-files.patch
 
 build:
-  number: 0
+  number: 1
 
 requirements:
   host:
@@ -34,17 +34,20 @@ outputs:
     script: build_lib.bat  # [win]
     requirements:
       build:
+        # build-time only, for CMake source generation (build_lib.sh points
+        # Python3_EXECUTABLE at $BUILD_PREFIX); must NOT be in host — python's
+        # weak run_exports gave the 4.15.4_0 libz3 a spurious `python_abi
+        # 3.14.* *_cp314` run dep that made it uninstallable on py3.10-3.13
         - python
         - {{ stdlib('c') }}
         - {{ compiler('cxx') }}
         - cmake
         - ninja-base
       host:
-        - python
         - llvm-openmp  # [osx]
         - libgomp  # [linux]
         - vcomp14  # [win and x86_64]
-      run_constraints:
+      run_constrained:
         - z3prover =={{ version }}
     test:
       commands:
