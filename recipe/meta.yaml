@@ -3,7 +3,9 @@
 {% set version_with_py_micro = "4.15.4.0" %}
 
 package:
-  name: {{ name }}
+  # -split suffix: the top level must not share a name with the z3prover output
+  # below, or that output's tests are silently skipped (multi-output shadowing)
+  name: {{ name }}-split
   version: {{ version }}
 
 source:
@@ -15,16 +17,17 @@ source:
     - patches/0002-avoid-custom-re-build-commands-and-data-files.patch
 
 build:
-  number: 0
+  number: 1
 
 requirements:
+  build:
+    - {{ stdlib('c') }}
+    - {{ compiler('cxx') }}
+    - cmake
+    - ninja-base
   host:
     - pip
     - python
-    - cmake
-    - ninja-base
-    - {{ stdlib('c') }}
-    - {{ compiler('cxx') }}
   run:
     - python
 
@@ -34,17 +37,22 @@ outputs:
     script: build_lib.bat  # [win]
     requirements:
       build:
+        # build-time only, for CMake source generation (build_lib.sh points
+        # Python3_EXECUTABLE at $BUILD_PREFIX); must NOT be in host — python's
+        # weak run_exports gave the 4.15.4_0 libz3 a spurious `python_abi
+        # 3.14.* *_cp314` run dep that made it uninstallable on py3.10-3.13
         - python
         - {{ stdlib('c') }}
         - {{ compiler('cxx') }}
         - cmake
         - ninja-base
       host:
-        - python
-        - llvm-openmp  # [osx]
-        - libgomp  # [linux]
-        - vcomp14  # [win and x86_64]
-      run_constraints:
+        # llvm-openmp on pkgs/main tops out at 19.1.7 for osx-64 vs 22.1.2 for osx-arm64
+        - llvm-openmp 22.1.2  # [osx and arm64]
+        - llvm-openmp 19.1.7  # [osx and x86_64]
+        - libgomp 15.2.0  # [linux]
+        - vcomp14 {{ vcomp14 }}  # [win and x86_64] analint: host_section_needs_exact_pinnings  # exact pin comes from the aggregate CBC vcomp14 var
+      run_constrained:
         - z3prover =={{ version }}
     test:
       commands:
@@ -113,9 +121,11 @@ outputs:
         - pip
         - python
         - setuptools
-        - llvm-openmp  # [osx]
-        - libgomp  # [linux]
-        - vcomp14  # [win and x86_64]
+        # llvm-openmp on pkgs/main tops out at 19.1.7 for osx-64 vs 22.1.2 for osx-arm64
+        - llvm-openmp 22.1.2  # [osx and arm64]
+        - llvm-openmp 19.1.7  # [osx and x86_64]
+        - libgomp 15.2.0  # [linux]
+        - vcomp14 {{ vcomp14 }}  # [win and x86_64] analint: host_section_needs_exact_pinnings  # exact pin comes from the aggregate CBC vcomp14 var
         - {{ pin_subpackage("libz3", exact=True) }}
       run:
         - python
@@ -145,14 +155,30 @@ outputs:
         - z3 --help
 
 about:
+  # v1 meta.yaml keys (home/doc_url/dev_url); the previous conda-forge v2 keys
+  # (homepage/repository/documentation) were silently ignored by conda-build
+  home: https://github.com/Z3Prover/z3
   license: MIT
+  license_family: MIT
   license_file: LICENSE.txt
   summary: The Z3 Theorem Prover
-  homepage: https://github.com/Z3Prover/z3
-  repository: https://github.com/Z3Prover/z3
-  documentation: https://github.com/Z3Prover/z3/wiki#background
+  description: |
+    Z3 is a theorem prover / SMT (Satisfiability Modulo Theories) solver from
+    Microsoft Research. It is used to check the satisfiability of logical
+    formulas over one or more theories and is widely applied in software
+    verification, program analysis, and constraint solving. This feedstock
+    provides the libz3 shared library, the z3 command-line tool, and the
+    z3-solver Python bindings.
+  doc_url: https://github.com/Z3Prover/z3/wiki#background
+  dev_url: https://github.com/Z3Prover/z3
 
 extra:
+  # missing_imports_or_run_test_py is inapplicable here: libz3 is a C library
+  # and z3prover is a lib-only compat metapackage (no python bindings to
+  # import); both are exercised via `z3 --help` and file-existence command
+  # tests. The z3-solver output does run imports + pytest.
+  skip-lints:
+    - missing_imports_or_run_test_py
   recipe-maintainers:
     - martin-g
     - h-vetinari

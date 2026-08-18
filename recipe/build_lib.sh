@@ -4,12 +4,6 @@ set -xe
 
 mkdir -p build_lib && cd build_lib
 
-# disable -fno-plt, which causes problems with GCC on PPC
-if [[ "$target_platform" == "linux-ppc64le" ]]; then
-    CFLAGS="$(echo $CFLAGS | sed 's/-fno-plt //g')"
-    CXXFLAGS="$(echo $CXXFLAGS | sed 's/-fno-plt //g')"
-fi
-
 cmake -G "Ninja" \
     ${CMAKE_ARGS} \
     -DPython3_EXECUTABLE=${BUILD_PREFIX}/bin/python \
